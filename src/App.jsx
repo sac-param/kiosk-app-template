@@ -113,14 +113,16 @@ export default function InfiniteGrid() {
 
   // Preload all images (non-blocking)
   useEffect(() => {
+    // Use BASE_URL to preload with relative paths
+    const base = import.meta.env.BASE_URL || './';
     IMAGES.forEach((src) => {
       const img = new Image();
       img.decoding = "async";
-      img.src = `/${src}`;
+      img.src = `${base}${src}`;
     });
     // also preload background.png (tile paper texture)
     const bg = new Image();
-    bg.src = "/background.png";
+    bg.src = `${base}background.png`;
   }, []);
 
   // Set CSS custom properties for tile dimensions
@@ -179,6 +181,8 @@ export default function InfiniteGrid() {
     const col0 = Math.floor(camX / STEP_X);
     const row0 = Math.floor(camY / STEP_Y);
 
+    const base = import.meta.env.BASE_URL || './';
+
     let idx = 0;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++, idx++) {
@@ -191,7 +195,13 @@ export default function InfiniteGrid() {
           tile.wc = wc;
           tile.wr = wr;
           const imgName = imageForCell(wc, wr);
-          tile.el.style.setProperty("--img", `url("/${imgName}")`);
+          const imgUrl = `${base}${imgName}`;
+          tile.el.style.setProperty("--img", `url("${imgUrl}")`);
+          // Also set the background image (paper texture) only once per tile
+          if (!tile.el.style.background) {
+            const bgUrl = `${base}background.png`;
+            tile.el.style.background = `url("${bgUrl}") center/cover no-repeat`;
+          }
           // store cell coordinates for click detection
           tile.el.dataset.wc = wc;
           tile.el.dataset.wr = wr;
@@ -297,8 +307,10 @@ export default function InfiniteGrid() {
         const wr = parseInt(physics.pressTile.dataset.wr, 10);
         if (!isNaN(wc) && !isNaN(wr)) {
           const imgName = imageForCell(wc, wr);
+          const base = import.meta.env.BASE_URL || './';
+          const imgUrl = `${base}${imgName}`;
           setModalTitle(`Image — cell (${wc}, ${wr})`);
-          setModalImageSrc(`/${imgName}`);
+          setModalImageSrc(imgUrl);
           setModalOpen(true);
         }
       }
@@ -406,18 +418,17 @@ export default function InfiniteGrid() {
       --inner: 8px;
       --radius: 8px;
     }
-        * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  html, body, #root {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;   /* removes all scrollbars */
-    background: #000;
-  }
-
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;   /* removes all scrollbars */
+      background: #000;
+    }
     #infinite-viewport {
       position: relative;
       overflow: hidden;
@@ -426,19 +437,17 @@ export default function InfiniteGrid() {
       background: #000000;
       touch-action: none;
     }
-
     #infinite-layer {
       position: absolute;
       inset: 0;
       transform-origin: 0 0;
       will-change: transform;
     }
-
     .tile {
       position: absolute;
       width: var(--tile-w);
       height: var(--tile-h);
-      background: url("/background.png") center/cover no-repeat;
+      background: none;  /* set dynamically in JS */
       contain: paint;
       will-change: transform;
       backface-visibility: hidden;
@@ -446,7 +455,6 @@ export default function InfiniteGrid() {
       cursor: pointer;
       box-shadow: 0 0 18px rgba(194, 192, 192, 0.55);
     }
-
     .tile::after {
       content: "";
       position: absolute;
@@ -458,11 +466,9 @@ export default function InfiniteGrid() {
       will-change: opacity;
       transform: translateZ(0);
     }
-
     .tile.ready::after {
       opacity: 1;
     }
-
     /* Modal styling */
     .modal-backdrop {
       position: fixed;
@@ -474,7 +480,6 @@ export default function InfiniteGrid() {
       backdrop-filter: blur(1px);
       z-index: 9999;
     }
-
     .modal.image-modal {
       width: 96vw;
       height: 92vh;
@@ -488,7 +493,6 @@ export default function InfiniteGrid() {
       display: grid;
       grid-template-rows: 56px 1fr;
     }
-
     .modal header {
       display: flex;
       align-items: center;
@@ -498,13 +502,11 @@ export default function InfiniteGrid() {
       background: linear-gradient(180deg, #191919, #141414);
       border-bottom: 1px solid #232323;
     }
-
     .modal header h2 {
       margin: 0;
       font: 700 18px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
       letter-spacing: 0.2px;
     }
-
     .imageWrap {
       display: flex;
       justify-content: center;
@@ -516,7 +518,6 @@ export default function InfiniteGrid() {
       box-sizing: border-box;
       overflow: hidden;
     }
-
     .imageWrap img {
       display: block;
       width: 100%;
@@ -526,7 +527,6 @@ export default function InfiniteGrid() {
       border-radius: 12px;
       box-shadow: 0 0 18px rgba(128, 128, 128, 0.35);
     }
-
     .closeBtn {
       appearance: none;
       border: 0;
@@ -537,7 +537,6 @@ export default function InfiniteGrid() {
       cursor: pointer;
       font-weight: 700;
     }
-
     .closeBtn:hover {
       background: #3a3a3a;
     }
